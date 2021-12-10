@@ -1,17 +1,17 @@
 // trajectory action client for the gripper robot
-// this node demonstrate how to pick up a beer and place it with a robot gripper
-// this movement has been decomposed below: (in gazebo there is a table with a beer)
+// this node demonstrate how to pick up a brick and place it with a robot gripper
+// this movement has been decomposed below: (in gazebo there is a table with a brick)
 	// 1.move the gripper to the safe point
 		// (get current joint positions of the gripper robot from gazebo)
-	// 2.move the gripper to the top area of the beer
-		// (get the position of the beer from gazebo)
-	// 3.move the gripper around the beer
-	// 4.clamp the gripper to grasp the beer
-	// 5.move the gripper up with the beer
+	// 2.move the gripper to the top area of the brick
+		// (get the position of the brick from gazebo)
+	// 3.move the gripper around the brick
+	// 4.clamp the gripper to grasp the brick
+	// 5.move the gripper up with the brick
 	// 6.move the gripper to the above of target area (center of table)
 		// (get the position of the table from gazebo)
-	// 7.move the gripper down to place the beer on table
-	// 8.unclamp the gripper and release the beer
+	// 7.move the gripper down to place the brick on table
+	// 8.unclamp the gripper and release the brick
 	// 9.move the gripper up from table
 	// 10.move the gripper back to the safe point
 
@@ -46,7 +46,7 @@ std::vector<double> inverseKinematics(geometry_msgs::Point gripper_pos, double g
 		// joint6(prismatic):	0		0.16
 
 	// the center of the gripper is defined at the center of the two paddles
-	// the height of the table is around 1.00m, beer is around 0.23m
+	// the height of the table is around 1.00m, brick is around 0.23m
 	// some other necessary dimensions
 	double link1_height = 1.1; // distance from top of link1 to ground
 	double link2_3_length = 1.0; // length of link2 & 3
@@ -132,28 +132,28 @@ int main(int argc, char** argv) {
 	// parameters for flow control, time assignment
 	double dt_sample = 1.0; // really coarse, let action server to interpolate
 	int time_1 = 5; // time for task 1, move to safe, integer to be divided by dt_sample
-	int time_2 = 5; // task 2, move to beer top
-	int time_3 = 3; // task 3, move to around beer
+	int time_2 = 5; // task 2, move to brick top
+	int time_3 = 3; // task 3, move to around brick
 	int time_4 = 2; // task 4, clamp the gripper
 	int time_5 = 3; // task 5, move up the gripper
 	int time_6 = 5; // task 6, move to the above of target
-	int time_7 = 3; // task 7, place the beer
+	int time_7 = 3; // task 7, place the brick
 	int time_8 = 2; // task 8, unclamp the gripper
 	int time_9 = 3; // task 9, move up the gripper
 	int time_10 = 5; // task 10, move to safe
 	double time_delay = 1.0; // delay between every task
-	double lift_height = 0.3; // height to lift the beer up
+	double lift_height = 0.3; // height to lift the brick up
 	std::vector<double> start_jnts; // start joints for each move task
 	std::vector<double> end_jnts; // end joints for each move task
 	double fraction_of_range;
 	bool finish_before_timeout;
 	start_jnts.resize(6);
 	end_jnts.resize(6);
-	// double beer_height = 0.23; // the height of the beer
-	double beer_height = 0.28; // 0.23 is real height, use 0.30 to lift the grasp point up a little
-	double table_height = 1.0; // the height of the table
-	double gripper_open = 0.24; // distance of two paddles when gripper is open
-	double gripper_close = 0.08; // distance of two paddles when grasping the beer
+	// double brick_height = 0.23; // the height of the brick
+	double brick_height = 0.16; // 0.23 is real height, use 0.30 to lift the grasp point up a little
+	double table_height = 1.0; //1.0; // the height of the table
+	double gripper_open = 0.30; // distance of two paddles when gripper is open
+	double gripper_close = 0.08; // distance of two paddles when grasping the brick
 
 	///////////////////////////////////////
 	// 1.move the gripper to the safe point
@@ -211,24 +211,25 @@ int main(int argc, char** argv) {
 	ros::Duration(time_delay).sleep(); // delay before jumping to next task
 
 	/////////////////////////////////////////////////
-	// 2.move the gripper to the top area of the beer
+	// 2.move the gripper to the top area of the brick
 	/////////////////////////////////////////////////
 
-	ROS_INFO("task 2: move the gripper to the top area of the beer.");
+	ROS_INFO("task 2: move the gripper to the top area of the brick.");
 
-	// get the position of the beer from gazebo
-	// the position from gazebo is the bottom center of the beer
-	geometry_msgs::Point beer_pos; // {float64 x, float64 y, float z}
-	get_model_state_srv_msg.request.model_name = "beer";
+	// get the position of the brick from gazebo
+	// the position from gazebo is the bottom center of the brick
+	geometry_msgs::Point brick_pos; // {float64 x, float64 y, float z}
+	get_model_state_srv_msg.request.model_name = "single_brick";
 	get_model_state_srv_msg.request.relative_entity_name = "link";
-	// "link" is the entity name when I add a beer in gazebo
+	// "link" is the entity name when I add a brick in gazebo
 	get_model_state_client.call(get_model_state_srv_msg);
-	beer_pos = get_model_state_srv_msg.response.pose.position;
+	brick_pos = get_model_state_srv_msg.response.pose.position;
+	ROS_INFO("brick pos %f %f %f", brick_pos.x, brick_pos.y, brick_pos.z);
 
-	// calculate robot joints when the gripper is above the beer
+	// calculate robot joints when the gripper is above the brick
 	geometry_msgs::Point hover_open_start_pos;
-	hover_open_start_pos = beer_pos;
-	hover_open_start_pos.z = hover_open_start_pos.z + beer_height/2 + lift_height;
+	hover_open_start_pos = brick_pos;
+	hover_open_start_pos.z = hover_open_start_pos.z + brick_height/2 + lift_height;
 	std::vector<double> hover_open_start_jnts; // the corresponding joint position
 	hover_open_start_jnts.resize(6);
 	hover_open_start_jnts = inverseKinematics(hover_open_start_pos, gripper_open); // calculate the robot joints
@@ -271,15 +272,15 @@ int main(int argc, char** argv) {
 	ros::Duration(time_delay).sleep(); // delay before jumping to next task
 
 	/////////////////////////////////////
-	// 3.move the gripper around the beer
+	// 3.move the gripper around the brick
 	/////////////////////////////////////
 
-	ROS_INFO("task 3: move the gripper around the beer.");
+	ROS_INFO("task 3: move the gripper around the brick.");
 
-	// calculate robot joints when around the beer
+	// calculate robot joints when around the brick
 	geometry_msgs::Point around_open_start_pos;
-	around_open_start_pos = beer_pos;
-	around_open_start_pos.z = around_open_start_pos.z + beer_height/2;
+	around_open_start_pos = brick_pos;
+	around_open_start_pos.z = around_open_start_pos.z + brick_height/2;
 	std::vector<double> around_open_start_jnts; // the corresponding joint position
 	around_open_start_jnts.resize(6);
 	around_open_start_jnts = inverseKinematics(around_open_start_pos, gripper_open);
@@ -315,12 +316,12 @@ int main(int argc, char** argv) {
 	ros::Duration(time_delay).sleep(); // delay before jumping to next task
 
 	////////////////////////////////////////
-	// 4.clamp the gripper to grasp the beer
+	// 4.clamp the gripper to grasp the brick
 	////////////////////////////////////////
 
-	ROS_INFO("task 4: clamp the gripper to grasp the beer.");
+	ROS_INFO("task 4: clamp the gripper to grasp the brick.");
 
-	// calculate robot joints when grasp the beer
+	// calculate robot joints when grasp the brick
 	geometry_msgs::Point grasp_close_start_pos;
 	grasp_close_start_pos = around_open_start_pos;
 	std::vector<double> grasp_close_start_jnts; // the corresponding joint position
@@ -358,12 +359,12 @@ int main(int argc, char** argv) {
 	ros::Duration(time_delay).sleep(); // delay before jumping to next task
 
 	//////////////////////////////////////
-	// 5.move the gripper up with the beer
+	// 5.move the gripper up with the brick
 	//////////////////////////////////////
 
-	ROS_INFO("task 5: move the gripper up with the beer.");
+	ROS_INFO("task 5: move the gripper up with the brick.");
 
-	// calculate the robot joint when grasp the beer and lift up
+	// calculate the robot joint when grasp the brick and lift up
 	geometry_msgs::Point hover_close_start_pos;
 	hover_close_start_pos = grasp_close_start_pos;
 	hover_close_start_pos.z = hover_close_start_pos.z + lift_height;
@@ -414,7 +415,7 @@ int main(int argc, char** argv) {
 	get_model_state_client.call(get_model_state_srv_msg);
 	table_pos = get_model_state_srv_msg.response.pose.position;
 
-	// calculate the target position of the beer
+	// calculate the target position of the brick
 	geometry_msgs::Point target_pos;
 	target_pos = table_pos;
 	target_pos.z = target_pos.z + table_height;
@@ -422,7 +423,7 @@ int main(int argc, char** argv) {
 	// calculate the robot joints at the above of target area
 	geometry_msgs::Point hover_close_end_pos;
 	hover_close_end_pos = target_pos;
-	hover_close_end_pos.z = hover_close_end_pos.z + beer_height/2 + lift_height;
+	hover_close_end_pos.z = hover_close_end_pos.z + brick_height/2 + lift_height;
 	std::vector<double> hover_close_end_jnts;
 	hover_close_end_jnts.resize(6);
 	hover_close_end_jnts = inverseKinematics(hover_close_end_pos, gripper_close);
@@ -458,15 +459,15 @@ int main(int argc, char** argv) {
 	ros::Duration(time_delay).sleep(); // delay before jumping to next task
 
 	/////////////////////////////////////////////////////
-	// 7.move the gripper down to place the beer on table
+	// 7.move the gripper down to place the brick on table
 	/////////////////////////////////////////////////////
 
-	ROS_INFO("task 7: move the gripper down to place the beer on table.");
+	ROS_INFO("task 7: move the gripper down to place the brick on table.");
 
 	// calculate the robot joints when move the gripper down
 	geometry_msgs::Point grasp_close_end_pos;
 	grasp_close_end_pos = target_pos;
-	grasp_close_end_pos.z = grasp_close_end_pos.z + beer_height/2;
+	grasp_close_end_pos.z = grasp_close_end_pos.z + brick_height/2;
 	std::vector<double> grasp_close_end_jnts;
 	grasp_close_end_jnts.resize(6);
 	grasp_close_end_jnts = inverseKinematics(grasp_close_end_pos, gripper_close);
@@ -502,15 +503,15 @@ int main(int argc, char** argv) {
 	ros::Duration(time_delay).sleep(); // delay before jumping to next task
 
 	/////////////////////////////////////////////
-	// 8.unclamp the gripper and release the beer
+	// 8.unclamp the gripper and release the brick
 	/////////////////////////////////////////////
 
-	ROS_INFO("task 8: unclamp the gripper and release the beer.");
+	ROS_INFO("task 8: unclamp the gripper and release the brick.");
 
-	// calculate the robot joints after release the beer
+	// calculate the robot joints after release the brick
 	geometry_msgs::Point around_open_end_pos;
 	around_open_end_pos = target_pos;
-	around_open_end_pos.z = around_open_end_pos.z + beer_height/2;
+	around_open_end_pos.z = around_open_end_pos.z + brick_height/2;
 	std::vector<double> around_open_end_jnts;
 	around_open_end_jnts.resize(6);
 	around_open_end_jnts = inverseKinematics(around_open_end_pos, gripper_open);
@@ -554,7 +555,7 @@ int main(int argc, char** argv) {
 	// calculate the robot joints after lift up the gripper
 	geometry_msgs::Point hover_open_end_pos;
 	hover_open_end_pos = target_pos;
-	hover_open_end_pos.z = hover_open_end_pos.z + beer_height/2 + lift_height;
+	hover_open_end_pos.z = hover_open_end_pos.z + brick_height/2 + lift_height;
 	std::vector<double> hover_open_end_jnts;
 	hover_open_end_jnts = inverseKinematics(hover_open_end_pos, gripper_open);
 
@@ -625,7 +626,7 @@ int main(int argc, char** argv) {
 	ros::Duration(time_delay).sleep(); // delay before jumping to next task
 
 
-	ROS_INFO("move-the-beer task is finished!");
+	ROS_INFO("move-the-brick task is finished!");
 
 	return 0;
 }

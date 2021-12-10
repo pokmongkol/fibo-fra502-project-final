@@ -1,13 +1,16 @@
+REFERENCE
+https://github.com/yangliu28/minimal_robot_gripper
+
+RUN SCRIPT:
 roscore
-
 rosrun gazebo_ros gazebo
-
+change value in gazebo, physics gravity is -0.1 to z axis
 rosrun gazebo_ros spawn_model -sdf -database table -model table -x 1.5
-rosrun gazebo_ros spawn_model -sdf -database beer -model beer -x 1.5 -z 3
+#rosrun gazebo_ros spawn_model -sdf -database beer -model single_brick -x 2 -z 1
+rosrun gazebo_ros spawn_model -file single_brick.urdf -urdf -model single_brick
 rosrun gazebo_ros spawn_model -file gripper_robot.urdf -urdf -model gripper_robot
-
 rosrun spw_robot gripper_robot_controller
-
 rosrun spw_robot gripper_robot_trajectory_action_server
-
 rosrun spw_robot gripper_robot_trajectory_action_client
+
+
