@@ -1,0 +1,13 @@
+roscore
+
+rosrun gazebo_ros gazebo
+
+rosrun gazebo_ros spawn_model -sdf -database table -model table -x 1.5
+rosrun gazebo_ros spawn_model -sdf -database beer -model beer -x 1.5 -z 3
+rosrun gazebo_ros spawn_model -file gripper_robot.urdf -urdf -model gripper_robot
+
+rosrun spw_robot gripper_robot_controller
+
+rosrun spw_robot gripper_robot_trajectory_action_server
+
+rosrun spw_robot gripper_robot_trajectory_action_client
